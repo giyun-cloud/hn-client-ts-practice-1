@@ -27,21 +27,52 @@ interface NewsComment extends News {
   readonly level: number;
 }
 
-const container: HTMLElement | null = document.getElementById("root");
-const ajax: XMLHttpRequest = new XMLHttpRequest();
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
+const container: HTMLElement | null = document.getElementById("root");
 const store: Store = {
   currentPage: 1,
   feeds: [],
 };
 
-function getData<AjaxResponse>(url: string):AjaxResponse {
-  ajax.open("GET", url, false);
-  ajax.send();
-
-  return JSON.parse(ajax.response);
+function applyApiMixins(targetClass: any, baseClasses: any[]): void {
+  baseClasses.forEach(baseClass => {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach(name => {
+      const descriptor = Object.getOwnPropertyDescriptor(baseClass.prototype, name);
+      
+      if (descriptor) {
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }            
+    });
+  });
 }
+
+class Api {
+  getRequest<AjaxResponse>(url: string):AjaxResponse {
+    const ajax:XMLHttpRequest = new XMLHttpRequest
+    ajax.open("GET", url, false);
+    ajax.send();
+  
+    return JSON.parse(ajax.response);
+  }
+}
+
+class NewsFeedApi {
+  getData(url: string): NewsFeed[] {
+    return this.getRequest<NewsFeed[]>(url);
+  }
+}
+
+class NewsDetailApi {
+  getData(url: string): NewsDetail{
+    return this.getRequest<NewsDetail>(url);
+  }
+}
+interface NewsFeedApi extends Api {}
+interface NewsDetailApi extends Api {}
+
+applyApiMixins(NewsFeedApi,[Api])
+applyApiMixins(NewsDetailApi,[Api])
 
 function makeFeeds(feeds: NewsFeed[]): NewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
@@ -62,6 +93,7 @@ function updateView(html: string): void {
 function newsFeed(): void {
   let newsFeed:NewsFeed[] = store.feeds;
   const newsList = [];
+  const api = new NewsFeedApi()
   let template = `
     <div class="bg-gray-600 min-h-screen">
       <div class="bg-white text-xl">
@@ -88,7 +120,7 @@ function newsFeed(): void {
   `;
 
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeeds(getData<NewsFeed[]>(NEWS_URL));
+    newsFeed = store.feeds = makeFeeds(api.getData(NEWS_URL));
   }
 
   for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
@@ -133,7 +165,8 @@ function newsFeed(): void {
 
 function newsDetail(): void {
   const id = location.hash.substr(7);
-  const newsContent: NewsDetail = getData<NewsDetail>(CONTENT_URL.replace("@id", id));
+  const api = new NewsDetailApi()
+  const newsContent: NewsDetail = api.getData(CONTENT_URL.replace("@id",id));
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
