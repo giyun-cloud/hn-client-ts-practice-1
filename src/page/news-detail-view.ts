@@ -34,23 +34,24 @@ const template = `
 
 export default class NewsDetailView extends View {
   store: NewsStore;
+
   constructor(containerId: string, store: NewsStore) {
     super(containerId, template)
-
     this.store = store
   }
 
   render() {
     const id = location.hash.substr(7);
+    
     const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
-    api.getData((data: NewsDetail) => {
-      const newsContent: NewsDetail = data;
+    api.getDataWithPromise((data: NewsDetail) => {
+      const { title, content, comments } = data;
 
       this.store.makeRead(Number(id));
-      this.setTemplateData("comments",this.makeComment(newsContent.comments));
+      this.setTemplateData("comments",this.makeComment(comments));
       this.setTemplateData("current_page", String(this.store.currentPage))
-      this.setTemplateData("title", newsContent.title)
-      this.setTemplateData("content", newsContent.content)
+      this.setTemplateData("title", title)
+      this.setTemplateData("content", content)
 
       this.updateView();
     })

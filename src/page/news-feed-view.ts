@@ -36,16 +36,13 @@ export default class NewsFeedView extends View {
     super(containerId, template)
 
     this.api = new NewsFeedApi(NEWS_URL);
-    this.store = store
-
-    
+    this.store = store   
   }
 
   render(): void {
     this.store.currentPage = Number(location.hash.substr(7) || 1);
     if (!this.store.hasFeeds) {
-      this.api.getData((feeds: NewsFeed[]) => {
-
+      this.api.getDataWithPromise((feeds: NewsFeed[]) => {
         this.store.setFeeds(feeds)
         this.renderView();
       })
@@ -80,16 +77,8 @@ export default class NewsFeedView extends View {
     `);
     }
     this.setTemplateData("news_feed", this.getHtml());
-    this.setTemplateData(
-      "prev_page",
-      String(this.store.currentPage > 1 ? this.store.currentPage - 1 : 1),
-    );
-    this.setTemplateData(
-      "next_page",
-      String(this.store.currentPage < this.store.numberOfFeed / 10 ?
-        this.store.currentPage + 1 :
-        Math.ceil(this.store.numberOfFeed / 10)),
-    );
+    this.setTemplateData("prev_page",String(this.store.prevPage));
+    this.setTemplateData("next_page",String(this.store.nextPage));
   
     this.updateView();
 

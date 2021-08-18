@@ -19,7 +19,7 @@ export default class Store implements NewsStore {
   }
 
   get nextPage(): number {
-    if(this._currentPage > this.feeds.length/10) return Math.ceil(this.feeds.length/10);
+    if(this._currentPage >= this.feeds.length/10) return Math.ceil(this.feeds.length/10);
     return this._currentPage +1;
   }
 
